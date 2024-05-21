@@ -5,7 +5,7 @@ body {
     align-items: center;
     height: 100vh;
     margin: 0;
-    background-color: #000; /* Black background */
+    background-color: #333; /* Dark gray background */
     color: #fff; /* White text */
 }
 
@@ -14,7 +14,31 @@ body {
     background: #333; /* Dark gray background */
     padding: 20px;
     border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 10px rgb(0, 255, 0);
+    position: relative; /* Add relative positioning for stats button */
+    width: 80%; /* Adjust width as needed */
+    max-width: 600px; /* Maximum width */
+    height: 80%; /* Adjust height as needed */
+    max-height: 600px; /* Maximum height */
+}
+
+#game h1 {
+    margin: 0;
+    margin-bottom: 20px;
+    text-align: center; /* Center the game title */
+}
+
+#stats-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 10px;
+    font-size: 16px;
+    background: #444; /* Darker gray for buttons */
+    color: #fff; /* White text */
+    border: 1px solid #fff; /* White border */
+    border-radius: 5px; /* Rounded corners */
+    cursor: pointer;
 }
 
 #guesses {
@@ -25,13 +49,14 @@ body {
 }
 
 .guess-box {
-    width: 80%; /* Adjust width as needed */
-    height: 20px;
+    width: 92.5%; /* Adjust width as needed */
+    height: 30px;
     margin: 5px 0; /* Spacing between guess boxes */
     border: 1px solid #fff; /* White border */
     color: #fff; /* White text */
     text-align: center; /* Center text in the box */
-    line-height: 20px; /* Center text vertically */
+    line-height: 30px; /* Center text vertically */
+    overflow: hidden; /* Ensure text doesn't overflow */
 }
 
 #current-guess {
@@ -57,7 +82,7 @@ body {
     margin-bottom: 10px;
 }
 
-#play, #pause {
+#play, #pause, #skip, #submit, #new-game-control, .control-button {
     padding: 10px;
     font-size: 16px;
     background: #444; /* Darker gray for buttons */
@@ -146,31 +171,33 @@ body {
     top: 0;
     width: 100%; /* Full width */
     height: 100%; /* Full height */
-    overflow: auto; /* Enable scroll if needed */
-    background-color: rgb(0,0,0); /* Fallback color */
     background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    display: flex; /* Center modal */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
 }
 
 .modal-content {
     background-color: #333;
-    margin: 15% auto; /* 15% from the top and centered */
     padding: 20px;
     border: 1px solid #888;
-    width: 80%; /* Could be more or less, depending on screen size */
+    width: 80%; /* Same width as game screen */
+    max-width: 600px; /* Maximum width */
+    height: 80%; /* Same height as game screen */
+    max-height: 600px; /* Maximum height */
     color: #fff; /* White text */
+    text-align: center; /* Center the text in the modal */
+    border-radius: 10px; /* Same border radius as game screen */
+    position: relative; /* Ensure close button positions correctly */
+    margin-top: 15%; /* Position 15% from the top */
 }
 
 .close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-}
-
-.close:hover,
-.close:focus {
-    color: #000;
-    text-decoration: none;
+    color: #fffb00;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 16px;
     cursor: pointer;
 }
 
@@ -202,6 +229,7 @@ body {
 .bar-label {
     margin-top: 5px;
     font-size: 14px;
+    font-weight: bold; /* Bold the bar labels */
 }
 
 .stats-summary {
@@ -237,4 +265,18 @@ body {
     border: 1px solid #fff; /* White border */
     border-radius: 5px; /* Rounded corners */
     cursor: pointer;
+    margin: 0 10px; /* Space between buttons */
+}
+
+.highlight-green {
+    background-color: lightgreen;
+}
+
+.highlight-red {
+    background-color: red;
+}
+
+.buttons-container {
+    display: flex;
+    justify-content: center;
 }
