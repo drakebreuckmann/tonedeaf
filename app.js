@@ -13,15 +13,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const statsModal = document.getElementById('stats-modal');
     const closeModal = document.querySelector('.close');
     const statsContent = document.getElementById('stats-content');
+    const newGameButton = document.getElementById('new-game');
+    const resetStatsButton = document.getElementById('reset-stats');
 
     // Load song data with hosted MP3 URLs
-    let songs = [
+    let originalSongs = [
         {"Artist": "Ariana Grande", "Title": "we can't be friends", "Mp3Url": "https://my-heardle-clone-music-bucket-original-1.s3.us-east-2.amazonaws.com/Ariana+Grande/Ariana+Grande+-+we+cant+be+friends.mp3"},
         {"Artist": "Ariana Grande", "Title": "bloodline", "Mp3Url": "https://my-heardle-clone-music-bucket-original-1.s3.us-east-2.amazonaws.com/Ariana+Grande/Ariana+Grande+-+bloodline.mp3"},
         {"Artist": "Ariana Grande", "Title": "7 rings", "Mp3Url": "https://my-heardle-clone-music-bucket-original-1.s3.us-east-2.amazonaws.com/Ariana+Grande/Ariana+Grande+-+7+rings.mp3"},
         {"Artist": "Ariana Grande", "Title": "positions", "Mp3Url": "https://my-heardle-clone-music-bucket-original-1.s3.us-east-2.amazonaws.com/Ariana+Grande/Ariana+Grande+-+positions.mp3"},
         {"Artist": "Ariana Grande", "Title": "34+35", "Mp3Url": "https://my-heardle-clone-music-bucket-original-1.s3.us-east-2.amazonaws.com/Ariana+Grande/Ariana+Grande+-+34%2B35.mp3"}
     ];
+
+    let songs = JSON.parse(localStorage.getItem('heardleSongs')) || originalSongs;
 
     let currentSongIndex = Math.floor(Math.random() * songs.length);
     let currentClipIndex = 0;
@@ -30,19 +34,56 @@ document.addEventListener('DOMContentLoaded', () => {
     let playTimeout;
 
     // Load stats from local storage or initialize if not present
-    let stats = JSON.parse(localStorage.getItem('heardleStats')) || { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, X: 0 };
+    let stats = JSON.parse(localStorage.getItem('heardleStats')) || {
+        1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, X: 0,
+        played: 0, won: 0, streak: 0, maxStreak: 0
+    };
 
     function saveStats() {
         localStorage.setItem('heardleStats', JSON.stringify(stats));
     }
 
+    function saveSongs() {
+        localStorage.setItem('heardleSongs', JSON.stringify(songs));
+    }
+
     function updateStatsDisplay() {
         statsContent.innerHTML = '';
-        Object.keys(stats).forEach(key => {
-            const statDiv = document.createElement('div');
-            statDiv.innerHTML = `<span>${key}</span> <span>${stats[key]}</span>`;
-            statsContent.appendChild(statDiv);
-        });
+        const statsHTML = `
+            <div class="stats-bar">
+                ${Object.keys(stats).slice(0, 7).map(key => `
+                    <div class="stats-bar-item">
+                        <div class="bar-value">${stats[key]}</div>
+                        <div class="bar" style="height: ${stats[key] * 10}px;"></div>
+                        <div class="bar-label">${key}</div>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="stats-summary">
+                <div><span>${stats.played}</span> Played</div>
+                <div><span>${stats.won}</span> Won</div>
+                <div><span>${(stats.played > 0 ? (stats.won / stats.played * 100).toFixed(1) : 0)}%</span> Win rate</div>
+                <div><span>${stats.streak}</span> Current Streak</div>
+                <div><span>${stats.maxStreak}</span> Max Streak</div>
+            </div>
+        `;
+        statsContent.innerHTML = statsHTML;
+    }
+
+    function updateStats(guessedCorrectly) {
+        stats.played++;
+        if (guessedCorrectly) {
+            stats[currentClipIndex]++;
+            stats.won++;
+            stats.streak++;
+            if (stats.streak > stats.maxStreak) {
+                stats.maxStreak = stats.streak;
+            }
+        } else {
+            stats.X++;
+            stats.streak = 0;
+        }
+        saveStats();
     }
 
     function playCurrentClip(fullSong = false) {
@@ -116,24 +157,28 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentClipIndex < maxGuesses) {
             updateGuessBoxes();
         } else {
-            stats['X']++;
+            stats.X++;
+            stats.played++;
+            stats.streak = 0;
             saveStats();
             reveal.textContent = `The song was "${songs[currentSongIndex].Title}" by ${songs[currentSongIndex].Artist}`;
             playCurrentClip(true);
+            removeCurrentSong();
         }
     });
 
     submitButton.addEventListener('click', () => {
         const userGuess = guessInput.value;
         const correctAnswer = `${songs[currentSongIndex].Artist} - ${songs[currentSongIndex].Title}`;
-        if (userGuess.toLowerCase() === correctAnswer.toLowerCase()) {
+        const guessedCorrectly = userGuess.toLowerCase() === correctAnswer.toLowerCase();
+
+        if (guessedCorrectly) {
             feedback.textContent = 'Correct!';
             reveal.textContent = `The song was "${correctAnswer}"`;
             reveal.style.color = 'green';
             guessBoxes[currentClipIndex].classList.add('correct');
-            stats[currentClipIndex + 1]++;
-            saveStats();
             playCurrentClip(true); // Play full song
+            removeCurrentSong();
         } else if (userGuess.toLowerCase().startsWith(songs[currentSongIndex].Artist.toLowerCase())) {
             feedback.textContent = 'Close!';
             guessBoxes[currentClipIndex].classList.add('close');
@@ -141,21 +186,31 @@ document.addEventListener('DOMContentLoaded', () => {
             feedback.textContent = 'Try again!';
             guessBoxes[currentClipIndex].classList.add('incorrect');
         }
+
         guessBoxes[currentClipIndex].textContent = userGuess;
         guessInput.value = '';
         suggestionsList.innerHTML = '';
         updateGuessBoxes();
         currentClipIndex++;
+
         if (currentClipIndex < maxGuesses) {
             updateGuessBoxes();
         } else if (!reveal.textContent) {
-            stats['X']++;
-            saveStats();
+            feedback.textContent = 'No more guesses!';
             reveal.textContent = `The song was "${correctAnswer}"`;
             reveal.style.color = 'red';
             playCurrentClip(true); // Play full song
+            removeCurrentSong();
         }
+
+        updateStats(guessedCorrectly);
     });
+
+    function removeCurrentSong() {
+        songs.splice(currentSongIndex, 1);
+        saveSongs();
+        currentSongIndex = Math.floor(Math.random() * songs.length);
+    }
 
     guessInput.addEventListener('input', () => {
         showSuggestions(guessInput.value);
@@ -173,6 +228,18 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('click', (event) => {
         if (event.target == statsModal) {
             statsModal.style.display = 'none';
+        }
+    });
+
+    newGameButton.addEventListener('click', () => {
+        location.reload(); // Reload the page to start a new game
+    });
+
+    resetStatsButton.addEventListener('click', () => {
+        if (confirm('Are you sure you want to reset your stats?')) {
+            localStorage.removeItem('heardleStats');
+            localStorage.removeItem('heardleSongs');
+            location.reload(); // Reload the page to reset the game
         }
     });
 
