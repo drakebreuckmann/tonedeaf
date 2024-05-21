@@ -141,8 +141,8 @@ body {
     border: 1px solid #fff; /* White border */
     border-radius: 5px; /* Rounded corners */
     position: absolute;
-    width: 213px; /* Match the width of the guess input */
-    left: 64px; /* Align with the guess input */
+    width: 100%; /* Match the width of the guess input */
+    left: 0%; /* Align with the guess input */
     top: 100%; /* Position it below the guess input */
     z-index: 10;
     font-size: 14px; /* Slightly smaller text */
